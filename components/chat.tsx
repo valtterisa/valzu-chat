@@ -72,6 +72,7 @@ import { CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCustomer } from "autumn-js/react";
+import { useRouter } from "next/navigation";
 
 const modelCategories = [
   {
@@ -356,6 +357,7 @@ type ChatProps = {
 };
 
 export default function Chat({ id, initialMessages }: ChatProps) {
+  const router = useRouter();
   const broadcastChannelName = id ? `valzu-chat-${id}` : null;
   const isApplyingRemoteUpdate = useRef(false);
   const [model, setModel] = useState<string>(models[0].id);
@@ -363,6 +365,9 @@ export default function Chat({ id, initialMessages }: ChatProps) {
   const [text, setText] = useState<string>("");
 
   const { check } = useCustomer();
+  const { data: usage } = check({ featureId: "token_usage" });
+  const remainingMessages = usage?.balance ?? 0;
+  const isOutOfMessages = remainingMessages <= 0;
 
   const transport = useMemo(
     () =>
@@ -436,6 +441,14 @@ export default function Chat({ id, initialMessages }: ChatProps) {
     channel.close();
   }, [broadcastChannelName, messages]);
 
+  useEffect(() => {
+    if (!error) return;
+
+    const message = error.message || "Something went wrong while sending.";
+
+    toast.error(message);
+  }, [error]);
+
   const selectedModelData = useMemo(
     () => models.find((m) => m.id === model),
     [model],
@@ -450,7 +463,7 @@ export default function Chat({ id, initialMessages }: ChatProps) {
         return;
       }
 
-      if (!check({ featureId: "token_usage" })) {
+      if (isOutOfMessages) {
         toast.error("You're out of messages for your current plan.");
         return;
       }
@@ -470,19 +483,19 @@ export default function Chat({ id, initialMessages }: ChatProps) {
       );
       setText("");
     },
-    [sendMessage, model],
+    [sendMessage, model, isOutOfMessages],
   );
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
-      if (!check({ featureId: "token_usage" })) {
+      if (isOutOfMessages) {
         toast.error("You're out of messages for your current plan.");
         return;
       }
 
       sendMessage({ text: suggestion }, { body: { model } });
     },
-    [sendMessage, model],
+    [sendMessage, model, isOutOfMessages],
   );
 
   const handleTextChange = useCallback(
@@ -498,8 +511,9 @@ export default function Chat({ id, initialMessages }: ChatProps) {
   }, []);
 
   const isSubmitDisabled = useMemo(
-    () => !(text.trim() || status) || status === "streaming",
-    [text, status],
+    () =>
+      isOutOfMessages || !(text.trim() || status) || status === "streaming",
+    [text, status, isOutOfMessages],
   );
 
   return (
@@ -533,7 +547,22 @@ export default function Chat({ id, initialMessages }: ChatProps) {
               <PromptInputAttachmentsDisplay />
             </PromptInputHeader>
             <PromptInputBody>
-              <PromptInputTextarea onChange={handleTextChange} value={text} />
+              {isOutOfMessages ? (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2 text-xs sm:text-sm">
+                  <div className="text-muted-foreground">
+                    You&apos;re out of messages for your current plan.
+                  </div>
+                  <button
+                    className="whitespace-nowrap rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    type="button"
+                    onClick={() => router.push("/billing")}
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+              ) : (
+                <PromptInputTextarea onChange={handleTextChange} value={text} />
+              )}
             </PromptInputBody>
             <PromptInputFooter>
               <PromptInputTools>
