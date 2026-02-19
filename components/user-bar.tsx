@@ -2,8 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "@/lib/auth-client";
+import { Menu } from "lucide-react";
 
-export function UserBar() {
+type UserBarProps = {
+  onOpenSidebar?: () => void;
+};
+
+export function UserBar({ onOpenSidebar }: UserBarProps) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
@@ -27,8 +32,17 @@ export function UserBar() {
 
   return (
     <header className="flex items-center justify-between border-b border-border bg-background/60 px-4 py-3 text-sm">
-      <div className="flex items-center gap-2">
-        <span className="h-8 w-8 rounded-full bg-primary/10 text-xs font-medium text-primary flex items-center justify-center">
+      <div className="flex items-center gap-3">
+        {onOpenSidebar && (
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-xs hover:bg-accent md:hidden"
+            onClick={onOpenSidebar}
+            type="button"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
           {session.user.email?.[0]?.toUpperCase() ?? "U"}
         </span>
         <div className="flex flex-col">

@@ -516,8 +516,8 @@ export default function Chat({ id, initialMessages }: ChatProps) {
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
-      <div className="flex min-w-0 shrink-0 flex-col gap-4 border-t border-border bg-background px-4 pb-4 pt-4">
-        <Suggestions className="min-w-0">
+      <div className="flex min-w-0 shrink-0 flex-col gap-4 border-t border-border bg-background px-2 pb-2 pt-2 sm:px-4 sm:pb-4 sm:pt-4">
+        <Suggestions className="min-w-0 hidden md:flex">
           {suggestions.map((suggestion) => (
             <SuggestionItem
               key={suggestion}
