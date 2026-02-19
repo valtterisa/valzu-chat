@@ -1,6 +1,6 @@
 import { generateId, type UIMessage } from "ai";
 import type { Collection } from "mongodb";
-import { getDb } from "./mongodb";
+import { betterAuthDb } from "./mongodb";
 
 export type ChatDocument = {
   chatId: string;
@@ -10,8 +10,7 @@ export type ChatDocument = {
 };
 
 async function getChatsCollection(): Promise<Collection<ChatDocument>> {
-  const db = await getDb();
-  const collection = db.collection<ChatDocument>("chats");
+  const collection = betterAuthDb.collection<ChatDocument>("chats");
 
   await collection.createIndex({ chatId: 1 }, { unique: true });
 

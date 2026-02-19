@@ -19,6 +19,7 @@ export default function SignupPage() {
     try {
       await signUp.email({
         email,
+        name: email.split("@")[0] || email,
         password,
         callbackURL: "/",
       });

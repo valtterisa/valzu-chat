@@ -2,7 +2,11 @@
 
 import type { PromptInputMessage } from "@/components/ai-elements/prompt-input";
 import type { UIMessage } from "ai";
-import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
+import {
+  DefaultChatTransport,
+  isReasoningUIPart,
+  isTextUIPart,
+} from "ai";
 import { useChat } from "@ai-sdk/react";
 
 import type { AttachmentData } from "@/components/ai-elements/attachments";
@@ -368,23 +372,29 @@ export default function Chat({ id, initialMessages }: ChatProps) {
   const [text, setText] = useState<string>("");
   const [useWebSearch, setUseWebSearch] = useState<boolean>(false);
 
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest({ messages, id, body }) {
+          const lastMessage = messages[messages.length - 1];
+
+          return {
+            body: {
+              message: lastMessage,
+              id,
+              ...body,
+            },
+          };
+        },
+      }),
+    [],
+  );
+
   const { messages, sendMessage, status, stop, error, setMessages } = useChat({
     id,
     messages: initialMessages,
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      prepareSendMessagesRequest({ messages, id, body }) {
-        const lastMessage = messages[messages.length - 1];
-
-        return {
-          body: {
-            message: lastMessage,
-            id,
-            ...body,
-          },
-        };
-      },
-    }),
+    transport,
   });
 
   useEffect(() => {
