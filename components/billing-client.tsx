@@ -31,6 +31,7 @@ export function BillingClient() {
 
   const handleOpenBillingPortal = async () => {
     await openBillingPortal({
+      openInNewTab: true,
       returnUrl: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/billing`,
     });
   };
@@ -71,13 +72,15 @@ export function BillingClient() {
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
-            onClick={handleUpgradeToPro}
-            type="button"
-          >
-            Upgrade to Pro
-          </button>
+          {currentProduct?.id !== "pro" && (
+            <button
+              className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+              onClick={handleUpgradeToPro}
+              type="button"
+            >
+              Upgrade to Pro
+            </button>
+          )}
           <button
             className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-60"
             disabled={currentProduct?.id !== "pro"}
@@ -122,8 +125,7 @@ export function BillingClient() {
               >
                 <div>
                   <div className="font-medium">
-                    {(invoice.total / 100).toFixed(2)}{" "}
-                    {invoice.currency.toUpperCase()}
+                    {invoice.total} {invoice.currency.toUpperCase()}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
                     {invoice.status}
