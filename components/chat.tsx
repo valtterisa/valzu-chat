@@ -2,7 +2,7 @@
 
 import type { PromptInputMessage } from "@/components/ai-elements/prompt-input";
 import type { UIMessage } from "ai";
-import { isReasoningUIPart, isTextUIPart } from "ai";
+import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
 import { useChat } from "@ai-sdk/react";
 
 import type { AttachmentData } from "@/components/ai-elements/attachments";
@@ -70,7 +70,7 @@ import {
 import { SpeechInput } from "@/components/ai-elements/speech-input";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { CheckIcon, GlobeIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const modelCategories = [
@@ -355,13 +355,84 @@ const ModelItem = ({
   );
 };
 
-export default function () {
+type ChatProps = {
+  id?: string;
+  initialMessages?: UIMessage[];
+};
+
+export default function Chat({ id, initialMessages }: ChatProps) {
+  const broadcastChannelName = id ? `valzu-chat-${id}` : null;
+  const isApplyingRemoteUpdate = useRef(false);
   const [model, setModel] = useState<string>(models[0].id);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [text, setText] = useState<string>("");
   const [useWebSearch, setUseWebSearch] = useState<boolean>(false);
 
-  const { messages, sendMessage, status, stop, error } = useChat();
+  const { messages, sendMessage, status, stop, error, setMessages } = useChat({
+    id,
+    messages: initialMessages,
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      prepareSendMessagesRequest({ messages, id, body }) {
+        const lastMessage = messages[messages.length - 1];
+
+        return {
+          body: {
+            message: lastMessage,
+            id,
+            ...body,
+          },
+        };
+      },
+    }),
+  });
+
+  useEffect(() => {
+    if (!broadcastChannelName) {
+      return;
+    }
+
+    const channel = new BroadcastChannel(broadcastChannelName);
+
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data as {
+        type: string;
+        messages: UIMessage[];
+      };
+
+      if (data.type !== "messages-update") {
+        return;
+      }
+
+      isApplyingRemoteUpdate.current = true;
+      setMessages(data.messages);
+    };
+
+    channel.addEventListener("message", handleMessage);
+
+    return () => {
+      channel.removeEventListener("message", handleMessage);
+      channel.close();
+    };
+  }, [broadcastChannelName, setMessages]);
+
+  useEffect(() => {
+    if (!broadcastChannelName) {
+      return;
+    }
+
+    if (isApplyingRemoteUpdate.current) {
+      isApplyingRemoteUpdate.current = false;
+      return;
+    }
+
+    const channel = new BroadcastChannel(broadcastChannelName);
+    channel.postMessage({
+      type: "messages-update",
+      messages,
+    });
+    channel.close();
+  }, [broadcastChannelName, messages]);
 
   const selectedModelData = useMemo(
     () => models.find((m) => m.id === model),
