@@ -6,6 +6,27 @@ Enterprise-grade, privacy-focused AI chat built on **Next.js App Router**, **Ver
 
 ---
 
+## Tech stack
+
+- **Framework**: Next.js App Router (React, TypeScript)
+- **Language**: TypeScript end‑to‑end
+- **UI**: Tailwind CSS + custom components
+- **AI**: Vercel AI SDK + Mistral models
+- **Auth**: Better Auth with MongoDB adapter
+- **Database**: MongoDB
+- **Runtime**: Node.js (Docker‑ready)
+- **Infra targets**: Nginx/Traefik, Kubernetes, or any EU‑region VM
+
+---
+
+## Pricing & billing
+
+- **Billing provider**: [`Autumn`](https://useautumn.com)
+- Designed for **usage‑based** or **subscription** pricing models
+- Keep all core app + data in the EU while delegating billing logic to Autumn’s infrastructure
+
+---
+
 ## Features
 
 - **EU‑first architecture**
