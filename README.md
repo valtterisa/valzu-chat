@@ -1,17 +1,43 @@
-## Overview
+## Valzu Chat
 
-This is a production-ready chat app built with **Next.js App Router** that uses the **Vercel AI SDK** and **Mistral models**.
+Enterprise-grade, privacy-focused AI chat built on **Next.js App Router**, **Vercel AI SDK**, and **Mistral models** – designed to run **fully in the EU**.
 
-- **Text-to-text only** (no voice, no web search)
-- **Sessioned chats** stored in **MongoDB**
-- **Authentication** handled by Better Auth (Mongo adapter)
-- Can be run **fully in the EU**:
-  - Mistral models are hosted in the EU
-  - You can run MongoDB and the app in EU regions (self-hosted or cloud)
+> ⚡ Opinionated starter for serious, production-ready chat apps – EU data residency, streaming UX, and auth baked in.
 
 ---
 
-## Environment setup
+## Features
+
+- **EU‑first architecture**
+  - All traffic can stay in EU regions (app, DB, and LLM)
+  - Uses **Mistral** models hosted in EU data centers
+- **Production chat UX**
+  - Persistent, sessioned conversations
+  - Sidebar with chat history and quick switching
+  - Streaming responses with partial rendering
+- **Strong authentication**
+  - Email/password auth with **Better Auth** (Mongo adapter)
+  - Session‑protected chat routes
+- **Solid data layer**
+  - Chats and auth state stored in **MongoDB**
+  - Easy to point at your own managed Mongo instance
+- **Dev‑friendly stack**
+  - **Next.js App Router**, **TypeScript**, **Vercel AI SDK**
+  - API routes ready for extension (`/api/chat`, etc.)
+
+---
+
+## Quickstart
+
+### 1. Install dependencies
+
+```bash
+pnpm install
+# or
+npm install
+```
+
+### 2. Environment setup
 
 Copy the example env file and fill in your secrets:
 
@@ -19,29 +45,29 @@ Copy the example env file and fill in your secrets:
 cp .env.example .env
 ```
 
-Required keys:
+Fill in at least:
 
-- **MISTRAL_API_KEY**: your Mistral API key (EU-hosted LLMs)
-- **MongoDB settings**:
-  - `MONGODB_DB`, `MONGODB_HOST`, `MONGODB_PORT`, `MONGODB_AUTH_SOURCE`
-  - Or you can set a single `MONGODB_URI` instead if you prefer
-- **Auth**:
-  - `BETTER_AUTH_SECRET`: long random secret
-  - `BETTER_AUTH_URL`: base URL of the app (e.g. `http://localhost:3000` in dev, your domain in prod)
+- **MISTRAL_API_KEY** – your Mistral API key (EU‑hosted LLMs)
+- **MongoDB**
+  - Either: `MONGODB_DB`, `MONGODB_HOST`, `MONGODB_PORT`, `MONGODB_AUTH_SOURCE`
+  - Or: a single `MONGODB_URI`
+- **Auth**
+  - `BETTER_AUTH_SECRET` – long, random secret
+  - `BETTER_AUTH_URL` – base URL of the app (e.g. `http://localhost:3000` in dev, your domain in prod)
 
-> Do **not** commit `.env` – only `.env.example` should be in git.
+> Do **not** commit `.env` – only `.env.example` should live in git.
 
 ---
 
-## Running locally (self-hosted dev)
+## Running locally
 
-First, start the local MongoDB instance (recommended for persistence):
+Start a local MongoDB instance (recommended for persistence):
 
 ```bash
 docker compose up -d
 ```
 
-Then run the development server (with your preferred package manager):
+Then run the development server (pick your package manager):
 
 ```bash
 npm run dev
@@ -56,13 +82,13 @@ bun dev
 Open `http://localhost:3000` and:
 
 - Visit `/signup` to create an account
-- Then you’ll be redirected to `/` which creates your first chat and takes you to `/c/[chat-id]`
+- You’ll be redirected to `/`, which creates your first chat and sends you to `/c/[chat-id]`
 
 ---
 
-## Production deployment (self-hosted)
+## Production deployment (self‑hosted)
 
-You can run this app as a regular Node.js service behind Nginx/Traefik or in Kubernetes.
+You can run this app as a regular Node.js service behind Nginx/Traefik, in Docker, or in Kubernetes.
 
 ### 1. Build the app
 
@@ -77,7 +103,7 @@ Or build using the provided `Dockerfile`:
 docker build -t valzu-chat .
 ```
 
-### 2. Run with your own MongoDB
+### 2. Run with your own MongoDB (EU recommended)
 
 Point your `.env` to your production MongoDB (for example, a managed MongoDB cluster in an EU region):
 
@@ -102,16 +128,17 @@ Make sure:
 
 ---
 
-## EU-only hosting
+## EU‑only hosting
 
 To keep **all data and compute in the EU**, configure:
 
-- **Mistral**: use your Mistral API key (Mistral runs its models in EU data centers)
-- **MongoDB**:
+- **Mistral**
+  - Use your Mistral API key (Mistral runs its models in EU data centers)
+- **MongoDB**
   - Run MongoDB on your own EU server, or
   - Use a managed MongoDB service with an EU region (e.g. `eu-west`, `eu-central`)
-- **App hosting**:
-  - Deploy the Node.js app on EU-based infrastructure (Hetzner, OVH, Scaleway, Fly.io EU regions, etc.)
+- **App hosting**
+  - Deploy the Node.js app on EU‑based infrastructure (Hetzner, OVH, Scaleway, Fly.io EU regions, etc.)
 
 With this setup:
 
@@ -121,18 +148,18 @@ With this setup:
 
 ---
 
-## API / architecture quick notes
+## Routes & architecture
 
 - **Routes**
   - `/` – creates a new chat (if signed in) and redirects to `/c/[chat-id]`
   - `/c/[chat-id]` – main chat UI (with sidebar for chat history)
   - `/signin` and `/signup` – email + password auth
 - **Chat**
-  - Uses the Vercel AI SDK `useChat` + `/api/chat` streaming endpoint
-  - Chats are stored in MongoDB in the `chats` collection
+  - Vercel AI SDK `useChat` + `/api/chat` streaming endpoint
+  - Chats stored in MongoDB (`chats` collection)
 - **Auth**
   - Better Auth using MongoDB adapter
-  - Session protected chat routes via `app/c/layout.tsx`
+  - Session‑protected chat routes via `app/c/layout.tsx`
 
 ---
 
@@ -145,4 +172,13 @@ MISTRAL_API_KEY="your-mistral-api-key"
 ```
 
 The app already uses Mistral models via the Vercel AI SDK; you can pick models from the selector in the chat UI.
+
+---
+
+## Customisation ideas
+
+- Swap the default Mistral model for your own fine‑tuned or higher‑tier model
+- Add role‑based access control around specific chats or features
+- Log prompts/responses to your own analytics pipeline
+- Integrate your own data source (RAG, tools, or function calling) behind `/api/chat`
 
