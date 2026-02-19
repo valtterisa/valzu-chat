@@ -71,9 +71,8 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from "@/components/ai-elements/sources";
-import { SpeechInput } from "@/components/ai-elements/speech-input";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
-import { CheckIcon, GlobeIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -370,7 +369,6 @@ export default function Chat({ id, initialMessages }: ChatProps) {
   const [model, setModel] = useState<string>(models[0].id);
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [text, setText] = useState<string>("");
-  const [useWebSearch, setUseWebSearch] = useState<boolean>(false);
 
   const transport = useMemo(
     () =>
@@ -469,26 +467,22 @@ export default function Chat({ id, initialMessages }: ChatProps) {
           text: message.text || "Sent with attachments",
           files: message.files,
         },
-        { body: { model, webSearch: useWebSearch } },
+        { body: { model } },
       );
       setText("");
     },
-    [sendMessage, model, useWebSearch],
+    [sendMessage, model],
   );
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
       sendMessage(
         { text: suggestion },
-        { body: { model, webSearch: useWebSearch } },
+        { body: { model } },
       );
     },
-    [sendMessage, model, useWebSearch],
+    [sendMessage, model],
   );
-
-  const handleTranscriptionChange = useCallback((transcript: string) => {
-    setText((prev) => (prev ? `${prev} ${transcript}` : transcript));
-  }, []);
 
   const handleTextChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -496,10 +490,6 @@ export default function Chat({ id, initialMessages }: ChatProps) {
     },
     [],
   );
-
-  const toggleWebSearch = useCallback(() => {
-    setUseWebSearch((prev) => !prev);
-  }, []);
 
   const handleModelSelect = useCallback((modelId: string) => {
     setModel(modelId);
@@ -552,19 +542,6 @@ export default function Chat({ id, initialMessages }: ChatProps) {
                     <PromptInputActionAddAttachments />
                   </PromptInputActionMenuContent>
                 </PromptInputActionMenu>
-                <SpeechInput
-                  className="shrink-0"
-                  onTranscriptionChange={handleTranscriptionChange}
-                  size="icon-sm"
-                  variant="ghost"
-                />
-                <PromptInputButton
-                  onClick={toggleWebSearch}
-                  variant={useWebSearch ? "default" : "ghost"}
-                >
-                  <GlobeIcon size={16} />
-                  <span>Search</span>
-                </PromptInputButton>
                 <ModelSelector
                   onOpenChange={setModelSelectorOpen}
                   open={modelSelectorOpen}
