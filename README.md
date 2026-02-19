@@ -74,7 +74,7 @@ Fill in at least:
   - Or: a single `MONGODB_URI`
 - **Auth**
   - `BETTER_AUTH_SECRET` – long, random secret
-  - `BETTER_AUTH_URL` – base URL of the app (e.g. `http://localhost:3000` in dev, your domain in prod)
+  - `NEXT_PUBLIC_BETTER_AUTH_URL` – base URL of the app (e.g. `http://localhost:3000` in dev, your domain in prod)
 
 > Do **not** commit `.env` – only `.env.example` should live in git.
 
@@ -145,7 +145,7 @@ docker run -d \
 Make sure:
 
 - MongoDB is reachable from the app container
-- `BETTER_AUTH_URL` in `.env` matches your public HTTPS URL (e.g. `https://chat.yourdomain.eu`)
+- `NEXT_PUBLIC_BETTER_AUTH_URL` in `.env` matches your public HTTPS URL (e.g. `https://chat.yourdomain.eu`)
 
 ---
 
@@ -202,4 +202,3 @@ The app already uses Mistral models via the Vercel AI SDK; you can pick models f
 - Add role‑based access control around specific chats or features
 - Log prompts/responses to your own analytics pipeline
 - Integrate your own data source (RAG, tools, or function calling) behind `/api/chat`
-

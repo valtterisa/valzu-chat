@@ -5,7 +5,11 @@ import { auth } from "@/lib/auth";
 import { listChats } from "@/lib/chat-repo";
 import { ChatShell } from "@/components/chat-shell";
 
-export default async function ChatLayout({ children }: { children: ReactNode }) {
+export default async function ChatLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -16,8 +20,5 @@ export default async function ChatLayout({ children }: { children: ReactNode }) 
 
   const chats = await listChats();
 
-  return (
-    <ChatShell chats={chats}>{children}</ChatShell>
-  );
+  return <ChatShell chats={chats}>{children}</ChatShell>;
 }
-

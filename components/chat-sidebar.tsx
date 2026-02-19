@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { CheckoutDialog, useCustomer } from "autumn-js/react";
 import type { ChatSummary } from "@/lib/chat-repo";
 import { ArrowLeftToLine, ArrowRightToLine, Trash } from "lucide-react";
 import {
@@ -29,6 +30,7 @@ export function ChatSidebar({
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const { checkout } = useCustomer();
   const [collapsed, setCollapsed] = useState<boolean>(true);
   const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -44,6 +46,17 @@ export function ChatSidebar({
   const toggle = useCallback(() => {
     setCollapsed((v) => !v);
   }, []);
+
+  const handleUpgradeToPro = useCallback(async () => {
+    try {
+      await checkout({
+        productId: "pro",
+        dialog: CheckoutDialog,
+      });
+    } catch (error) {
+      console.error("Autumn checkout failed", error);
+    }
+  }, [checkout]);
 
   if (variant === "overlay") {
     const handleClose = () => {
@@ -233,7 +246,7 @@ export function ChatSidebar({
       ].join(" ")}
     >
       <div className="flex h-12 items-center justify-between px-2">
-        {!collapsed && <div className="text-sm font-semibold px-2">Chats</div>}
+        {!collapsed && <div className="px-2 text-sm font-semibold">Chats</div>}
         <button
           className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-xs hover:bg-accent"
           onClick={toggle}
@@ -248,13 +261,20 @@ export function ChatSidebar({
       </div>
 
       {!collapsed && (
-        <div className="px-2 pb-2">
+        <div className="space-y-2 px-2 pb-2">
           <Link
             className="flex w-full items-center justify-center rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90"
             href="/"
           >
             New chat
           </Link>
+          <button
+            className="flex w-full items-center justify-center rounded-md border border-primary px-3 py-2 text-xs font-medium text-primary hover:bg-primary/10"
+            onClick={handleUpgradeToPro}
+            type="button"
+          >
+            Upgrade to Pro (100 msgs / month)
+          </button>
         </div>
       )}
 

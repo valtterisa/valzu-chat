@@ -2,11 +2,7 @@
 
 import type { PromptInputMessage } from "@/components/ai-elements/prompt-input";
 import type { UIMessage } from "ai";
-import {
-  DefaultChatTransport,
-  isReasoningUIPart,
-  isTextUIPart,
-} from "ai";
+import { DefaultChatTransport, isReasoningUIPart, isTextUIPart } from "ai";
 import { useChat } from "@ai-sdk/react";
 
 import type { AttachmentData } from "@/components/ai-elements/attachments";
@@ -75,6 +71,7 @@ import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useCustomer } from "autumn-js/react";
 
 const modelCategories = [
   {
@@ -370,6 +367,8 @@ export default function Chat({ id, initialMessages }: ChatProps) {
   const [modelSelectorOpen, setModelSelectorOpen] = useState(false);
   const [text, setText] = useState<string>("");
 
+  const { check } = useCustomer();
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -456,6 +455,11 @@ export default function Chat({ id, initialMessages }: ChatProps) {
         return;
       }
 
+      if (!check({ featureId: "token_usage" })) {
+        toast.error("You're out of messages for your current plan.");
+        return;
+      }
+
       if (message.files?.length) {
         toast.success("Files attached", {
           description: `${message.files.length} file(s) attached to message`,
@@ -476,10 +480,12 @@ export default function Chat({ id, initialMessages }: ChatProps) {
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
-      sendMessage(
-        { text: suggestion },
-        { body: { model } },
-      );
+      if (!check({ featureId: "token_usage" })) {
+        toast.error("You're out of messages for your current plan.");
+        return;
+      }
+
+      sendMessage({ text: suggestion }, { body: { model } });
     },
     [sendMessage, model],
   );
