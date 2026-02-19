@@ -20,6 +20,10 @@ export async function DELETE(req: Request, { params }: RouteParams) {
   const { id } = await params;
   const deleted = await deleteChat(id);
 
-  return NextResponse.json({ deleted });
+  if (!deleted) {
+    return NextResponse.json({ deleted: false }, { status: 404 });
+  }
+
+  return NextResponse.json({ deleted: true });
 }
 

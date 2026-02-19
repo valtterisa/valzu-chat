@@ -1,5 +1,6 @@
 import { generateId, type UIMessage } from "ai";
 import type { Collection } from "mongodb";
+import { ObjectId } from "mongodb";
 import { betterAuthDb } from "./mongodb";
 
 export type ChatDocument = {
@@ -84,6 +85,16 @@ export async function listChats(limit = 50): Promise<ChatSummary[]> {
 export async function deleteChat(chatId: string): Promise<boolean> {
   const collection = await getChatsCollection();
   const res = await collection.deleteOne({ chatId });
-  return res.deletedCount > 0;
+
+  if (res.deletedCount && res.deletedCount > 0) {
+    return true;
+  }
+
+  if (ObjectId.isValid(chatId)) {
+    const byId = await collection.deleteOne({ _id: new ObjectId(chatId) });
+    return Boolean(byId.deletedCount && byId.deletedCount > 0);
+  }
+
+  return false;
 }
 

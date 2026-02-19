@@ -46,6 +46,14 @@ export function ChatSidebar({ chats }: Props) {
         });
 
         if (!res.ok) {
+          console.error("Failed to delete chat", chatId);
+          return;
+        }
+
+        const data = (await res.json()) as { deleted?: boolean };
+
+        if (!data.deleted) {
+          console.error("Chat delete returned deleted=false", chatId);
           return;
         }
 
