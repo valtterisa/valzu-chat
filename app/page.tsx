@@ -9,7 +9,7 @@ export default async function Home() {
   });
 
   if (!session) {
-    redirect("/login");
+    redirect("/signin");
   }
 
   const chatId = await createChat();

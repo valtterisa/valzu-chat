@@ -9,6 +9,12 @@ export type ChatDocument = {
   updatedAt: Date;
 };
 
+export type ChatSummary = {
+  chatId: string;
+  messageCount: number;
+  updatedAt: Date;
+};
+
 async function getChatsCollection(): Promise<Collection<ChatDocument>> {
   const collection = betterAuthDb.collection<ChatDocument>("chats");
 
@@ -60,5 +66,24 @@ export async function createChat(
   });
 
   return chatId;
+}
+
+export async function listChats(limit = 50): Promise<ChatSummary[]> {
+  const collection = await getChatsCollection();
+  const docs = await collection
+    .find({}, { sort: { updatedAt: -1 }, limit })
+    .toArray();
+
+  return docs.map((doc) => ({
+    chatId: doc.chatId,
+    messageCount: doc.messages.length,
+    updatedAt: doc.updatedAt ?? doc.createdAt,
+  }));
+}
+
+export async function deleteChat(chatId: string): Promise<boolean> {
+  const collection = await getChatsCollection();
+  const res = await collection.deleteOne({ chatId });
+  return res.deletedCount > 0;
 }
 

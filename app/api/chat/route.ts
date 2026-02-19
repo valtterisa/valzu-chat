@@ -3,6 +3,7 @@ import {
   UIMessage,
   convertToModelMessages,
   createIdGenerator,
+  smoothStream,
 } from "ai";
 import { mistral } from "@ai-sdk/mistral";
 import { getChat, upsertChat } from "@/lib/chat-repo";
@@ -28,6 +29,10 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     system:
       "You are a helpful assistant that can answer questions and help with tasks",
+    experimental_transform: smoothStream({
+      delayInMs: 20, // optional: defaults to 10ms
+      chunking: "line", // optional: defaults to 'word'
+    }),
   });
 
   result.consumeStream();

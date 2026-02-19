@@ -63,15 +63,42 @@ export default function SignupPage() {
             <label className="text-sm font-medium" htmlFor="password">
               Password
             </label>
-            <input
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ring"
-              id="password"
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              type="password"
-              value={password}
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-0 focus-visible:ring-2 focus-visible:ring-ring"
+                id="password"
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                required
+              />
+              <button
+                className="whitespace-nowrap rounded-md border border-input bg-muted px-3 py-2 text-xs font-medium text-foreground hover:bg-accent"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const charset =
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
+                  const length = 16;
+                  const array = new Uint32Array(length);
+                  if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+                    window.crypto.getRandomValues(array);
+                  } else {
+                    for (let i = 0; i < length; i++) {
+                      array[i] = Math.floor(Math.random() * charset.length);
+                    }
+                  }
+                  let generated = "";
+                  for (let i = 0; i < length; i++) {
+                    generated += charset[array[i] % charset.length];
+                  }
+                  setPassword(generated);
+                }}
+                type="button"
+              >
+                Generate secure
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -93,7 +120,7 @@ export default function SignupPage() {
           Already have an account?{" "}
           <a
             className="font-medium text-primary underline-offset-4 hover:underline"
-            href="/login"
+            href="/signin"
           >
             Sign in
           </a>

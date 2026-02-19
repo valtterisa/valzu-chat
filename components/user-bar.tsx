@@ -11,7 +11,7 @@ export function UserBar() {
     await signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/login");
+          router.push("/signin");
         },
       },
     });
