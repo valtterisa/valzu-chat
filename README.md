@@ -178,6 +178,29 @@ Backend  →  Vertex AI Gemini     →  GCP (+ Google Search tool)
 
 ## Production deploy
 
+### GCP access (you, not Terraform)
+
+Terraform **does not log you in** or grant you project access. It uses **your** credentials (Application Default Credentials from `gcloud auth application-default login`) and calls GCP APIs. If your account lacks permissions, `terraform apply` fails with `403` / `Permission denied`.
+
+Before deploy:
+
+```bash
+gcloud auth login
+gcloud auth application-default login
+gcloud config set project valzu-chat-prod
+
+# Sanity check — can you read the project?
+gcloud projects describe valzu-chat-prod
+```
+
+Your user (or CI service account) needs roles that can manage Cloud Run, Artifact Registry, Firestore, IAM, and enable APIs — typically **Owner** or **Editor** plus IAM admin on the project.
+
+`provider "google" { project = var.project_id }` only sets **which project** Terraform targets; GCP IAM decides whether **you** are allowed to create resources there.
+
+The service accounts Terraform creates (`valzu-backend`, `valzu-frontend`) are for **Cloud Run at runtime** (Vertex AI, Firestore, etc.) — not for running Terraform.
+
+### Deploy
+
 First time only — copy and edit terraform vars:
 
 ```bash
@@ -206,6 +229,7 @@ Same as `./scripts/deploy.sh` — builds both Docker images, pushes to Artifact 
 | Frontend can't reach backend | Backend must be running; `BACKEND_API_URL=http://localhost:8080` in `.env` |
 | Docker frontend auth errors | Run `gcloud auth application-default login`; check ADC mount path in `docker-compose.yml` |
 | Empty backend response | Retry — Google Search + streaming can be slow on first call; check backend terminal logs |
+| Terraform `403` / `Permission denied` on deploy | Run `gcloud auth application-default login`; confirm `gcloud config set project` matches `PROJECT`; you need Owner/Editor (+ IAM) on that project |
 | `go: go.mod requires go >= 1.25` | Upgrade Go: https://go.dev/dl/ |
 
 ---
