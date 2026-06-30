@@ -1,6 +1,6 @@
 "use client";
 
-import type { ToolUIPart } from "ai";
+import type { ToolUIPart } from "@/lib/ai-types";
 import type { ComponentProps } from "react";
 
 import {

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ToolUIPart } from "ai";
+import type { ToolUIPart } from "@/lib/ai-types";
 import type { ComponentProps, ReactNode } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";

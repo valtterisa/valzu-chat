@@ -1,204 +1,231 @@
-## Valzu Chat
+# Valzu Chat
 
-Enterprise-grade, privacy-focused AI chat built on **Next.js App Router**, **Vercel AI SDK**, and **Mistral models** – designed to run **fully in the EU**.
+Chat app: **Next.js frontend** + **Go ADK backend** (Gemini + Google Search) + **Firestore** for threads/messages.
 
-> ⚡ Opinionated starter for serious, production-ready chat apps – EU data residency, streaming UX, and auth baked in.
-
----
-
-## Tech stack
-
-- **Framework**: Next.js App Router (React, TypeScript)
-- **Language**: TypeScript end‑to‑end
-- **UI**: Tailwind CSS + custom components
-- **AI**: Vercel AI SDK + Mistral models
-- **Auth**: Better Auth with MongoDB adapter
-- **Database**: MongoDB
-- **Runtime**: Node.js (Docker‑ready)
-- **Infra targets**: Nginx/Traefik, Kubernetes, or any EU‑region VM
-
----
-
-## Pricing & billing
-
-- **Billing provider**: [`Autumn`](https://useautumn.com)
-- Designed for **usage‑based** or **subscription** pricing models
-- Keep all core app + data in the EU while delegating billing logic to Autumn’s infrastructure
-
----
-
-## Features
-
-- **EU‑first architecture**
-  - All traffic can stay in EU regions (app, DB, and LLM)
-  - Uses **Mistral** models hosted in EU data centers
-- **Production chat UX**
-  - Persistent, sessioned conversations
-  - Sidebar with chat history and quick switching
-  - Streaming responses with partial rendering
-- **Strong authentication**
-  - Email/password auth with **Better Auth** (Mongo adapter)
-  - Session‑protected chat routes
-- **Solid data layer**
-  - Chats and auth state stored in **MongoDB**
-  - Easy to point at your own managed Mongo instance
-- **Dev‑friendly stack**
-  - **Next.js App Router**, **TypeScript**, **Vercel AI SDK**
-  - API routes ready for extension (`/api/chat`, etc.)
-
----
-
-## Quickstart
-
-### 1. Install dependencies
+## Commands
 
 ```bash
-pnpm install
-# or
-npm install
+pnpm dev      # local dev — backend :8080 + frontend :3000
+pnpm build    # compile backend → bin/backend + Next.js production build
+pnpm deploy   # Docker build/push + terraform apply (prod)
 ```
 
-### 2. Environment setup
+Deploy env vars (optional overrides):
 
-Copy the example env file and fill in your secrets:
+```bash
+export PROJECT=valzu-chat-prod
+export REGION=europe-west1
+pnpm deploy                  # tag = git short SHA
+pnpm deploy -- v1.2.3        # custom image tag
+```
+
+---
+
+## First-time setup
+
+### Install
+
+| Tool | Version |
+|------|---------|
+| [Go](https://go.dev/dl/) | 1.25+ |
+| [Node.js](https://nodejs.org/) | 22+ |
+| [pnpm](https://pnpm.io/) | latest |
+| [gcloud CLI](https://cloud.google.com/sdk/docs/install) | latest |
+| [Terraform](https://developer.hashicorp.com/terraform/install) | 1.5+ (deploy only) |
+| [Docker](https://docs.docker.com/get-docker/) | latest (deploy only) |
+
+### GCP (once per dev project)
+
+Use a **dev project** — don't point local dev at prod.
+
+```bash
+gcloud auth login
+gcloud auth application-default login
+
+export GOOGLE_CLOUD_PROJECT=valzu-chat-dev
+gcloud config set project $GOOGLE_CLOUD_PROJECT
+
+# Billing must be enabled (GCP console)
+
+gcloud services enable firestore.googleapis.com aiplatform.googleapis.com \
+  --project=$GOOGLE_CLOUD_PROJECT
+
+gcloud firestore databases create --location=eur3 --project=$GOOGLE_CLOUD_PROJECT
+
+gcloud firestore indexes composite create --project=$GOOGLE_CLOUD_PROJECT \
+  --collection-group=threads --field-config=field-path=updatedAt,order=descending
+
+gcloud firestore indexes composite create --project=$GOOGLE_CLOUD_PROJECT \
+  --collection-group=messages --field-config=field-path=createdAt,order=ascending
+```
+
+Wait until indexes are `READY` in the [Firestore console](https://console.cloud.google.com/firestore/indexes).
+
+### Env files + deps
 
 ```bash
 cp .env.example .env
+cp backend/.env.example backend/.env
+# Edit both — set GOOGLE_CLOUD_PROJECT to your dev project
+
+pnpm install
+cd backend && go mod download && cd ..
 ```
 
-Fill in at least:
-
-- **MISTRAL_API_KEY** – your Mistral API key (EU‑hosted LLMs)
-- **MongoDB**
-  - Either: `MONGODB_DB`, `MONGODB_HOST`, `MONGODB_PORT`, `MONGODB_AUTH_SOURCE`
-  - Or: a single `MONGODB_URI`
-- **Auth**
-  - `BETTER_AUTH_SECRET` – long, random secret
-  - `NEXT_PUBLIC_BETTER_AUTH_URL` – base URL of the app (e.g. `http://localhost:3000` in dev, your domain in prod)
-
-> Do **not** commit `.env` – only `.env.example` should live in git.
-
----
-
-## Running locally
-
-Start a local MongoDB instance (recommended for persistence):
-
-```bash
-docker compose up -d
+**.env**
+```env
+GOOGLE_CLOUD_PROJECT=valzu-chat-dev
+FIRESTORE_PROJECT_ID=valzu-chat-dev
+BACKEND_API_URL=http://localhost:8080
 ```
 
-Then run the development server (pick your package manager):
+**backend/.env**
+```env
+GOOGLE_CLOUD_PROJECT=valzu-chat-dev
+GOOGLE_CLOUD_LOCATION=europe-west1
+GOOGLE_GENAI_USE_VERTEXAI=True
+PORT=8080
+```
+
+### Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open `http://localhost:3000` and:
-
-- Visit `/signup` to create an account
-- You’ll be redirected to `/`, which creates your first chat and sends you to `/c/[chat-id]`
+Open **http://localhost:3000**
 
 ---
 
-## Production deployment (self‑hosted)
+## What each command does
 
-You can run this app as a regular Node.js service behind Nginx/Traefik, in Docker, or in Kubernetes.
+| Command | What happens |
+|---------|----------------|
+| `pnpm dev` | Starts Go backend in background, waits for `/health`, then `next dev` on :3000. Ctrl+C stops both. |
+| `pnpm build` | `go build` → `bin/backend`, then `next build` → `.next/` |
+| `pnpm deploy` | Builds Docker images, pushes to Artifact Registry, runs `terraform apply` |
 
-### 1. Build the app
-
-```bash
-npm install
-npm run build
-```
-
-Or build using the provided `Dockerfile`:
-
-```bash
-docker build -t valzu-chat .
-```
-
-### 2. Run with your own MongoDB (EU recommended)
-
-Point your `.env` to your production MongoDB (for example, a managed MongoDB cluster in an EU region):
-
-```bash
-MONGODB_URI="mongodb://user:password@your-eu-mongo-host:27017/valzu-chat?authSource=admin"
-```
-
-Then run the container:
-
-```bash
-docker run -d \
-  --name valzu-chat \
-  -p 3000:3000 \
-  --env-file .env \
-  valzu-chat
-```
-
-Make sure:
-
-- MongoDB is reachable from the app container
-- `NEXT_PUBLIC_BETTER_AUTH_URL` in `.env` matches your public HTTPS URL (e.g. `https://chat.yourdomain.eu`)
+Firestore and Vertex AI always hit GCP — even in dev. Credentials come from `gcloud auth application-default login`.
 
 ---
 
-## EU‑only hosting
-
-To keep **all data and compute in the EU**, configure:
-
-- **Mistral**
-  - Use your Mistral API key (Mistral runs its models in EU data centers)
-- **MongoDB**
-  - Run MongoDB on your own EU server, or
-  - Use a managed MongoDB service with an EU region (e.g. `eu-west`, `eu-central`)
-- **App hosting**
-  - Deploy the Node.js app on EU‑based infrastructure (Hetzner, OVH, Scaleway, Fly.io EU regions, etc.)
-
-With this setup:
-
-- User data stays in your MongoDB running in the EU
-- Auth data is stored in the same MongoDB
-- LLM calls go only to Mistral’s EU endpoints
-
----
-
-## Routes & architecture
-
-- **Routes**
-  - `/` – creates a new chat (if signed in) and redirects to `/c/[chat-id]`
-  - `/c/[chat-id]` – main chat UI (with sidebar for chat history)
-  - `/signin` and `/signup` – email + password auth
-- **Chat**
-  - Vercel AI SDK `useChat` + `/api/chat` streaming endpoint
-  - Chats stored in MongoDB (`chats` collection)
-- **Auth**
-  - Better Auth using MongoDB adapter
-  - Session‑protected chat routes via `app/c/layout.tsx`
-
----
-
-## Mistral configuration
-
-Set your Mistral API key in `.env`:
+## Sanity checks
 
 ```bash
-MISTRAL_API_KEY="your-mistral-api-key"
+curl http://localhost:8080/health        # backend
+curl http://localhost:3000/api/health    # frontend
 ```
-
-The app already uses Mistral models via the Vercel AI SDK; you can pick models from the selector in the chat UI.
 
 ---
 
-## Customisation ideas
+## Old two-terminal flow (optional)
 
-- Swap the default Mistral model for your own fine‑tuned or higher‑tier model
-- Add role‑based access control around specific chats or features
-- Log prompts/responses to your own analytics pipeline
-- Integrate your own data source (RAG, tools, or function calling) behind `/api/chat`
+If you prefer separate processes:
+
+```bash
+cd backend && go run .   # terminal 1
+pnpm exec next dev       # terminal 2
+```
+
+---
+
+## Run with Docker
+
+Everything in containers (Firestore still uses your GCP project):
+
+```bash
+gcloud auth application-default login
+
+export GOOGLE_CLOUD_PROJECT=valzu-chat-dev
+export FIRESTORE_PROJECT_ID=valzu-chat-dev
+
+cp .env.example .env
+cp backend/.env.example backend/.env
+# Edit both .env files with your project ID (see above)
+
+docker compose up --build
+```
+
+Open **http://localhost:3000**
+
+The frontend container mounts your ADC file from `~/.config/gcloud/application_default_credentials.json`. If that file is missing, run `gcloud auth application-default login` again.
+
+**Easier variant:** run only the backend in Docker and the frontend on the host:
+
+```bash
+docker compose up backend --build
+pnpm exec next dev
+```
+
+---
+
+## How it fits together
+
+```
+Browser  →  POST /api/stream     →  Next.js (localhost:3000)
+Next.js  →  Firestore            →  GCP (threads + messages)
+Next.js  →  POST /stream         →  Go backend (localhost:8080)
+Backend  →  Vertex AI Gemini     →  GCP (+ Google Search tool)
+```
+
+| URL | What |
+|-----|------|
+| http://localhost:3000 | Chat UI |
+| http://localhost:8080/health | Backend health |
+| http://localhost:3000/api/health | Frontend health |
+
+---
+
+## Production deploy
+
+First time only — copy and edit terraform vars:
+
+```bash
+cd terraform && cp terraform.tfvars.example terraform.tfvars && cd ..
+```
+
+Then:
+
+```bash
+export PROJECT=valzu-chat-prod
+export REGION=europe-west1
+pnpm deploy
+```
+
+Same as `./scripts/deploy.sh` — builds both Docker images, pushes to Artifact Registry, runs `terraform apply`.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `FIRESTORE_PROJECT_ID or GOOGLE_CLOUD_PROJECT must be set` | Copy `.env.example` → `.env` and set project IDs |
+| Firestore `FAILED_PRECONDITION` / index error | Create composite indexes (step 1 above) and wait until `READY` |
+| Backend `failed to create model` / Vertex errors | Enable `aiplatform.googleapis.com`; check billing; confirm `GOOGLE_GENAI_USE_VERTEXAI=True` |
+| Frontend can't reach backend | Backend must be running; `BACKEND_API_URL=http://localhost:8080` in `.env` |
+| Docker frontend auth errors | Run `gcloud auth application-default login`; check ADC mount path in `docker-compose.yml` |
+| Empty backend response | Retry — Google Search + streaming can be slow on first call; check backend terminal logs |
+| `go: go.mod requires go >= 1.25` | Upgrade Go: https://go.dev/dl/ |
+
+---
+
+## Project layout
+
+```
+backend/            Go ADK service — POST /stream, GET /health
+app/api/            Next.js API routes
+lib/                Firestore, SSE, backend client, hooks
+terraform/          GCP infra (Cloud Run, Firestore, IAM)
+scripts/            dev.sh, build.sh, deploy.sh
+```
+
+## Env reference
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `GOOGLE_CLOUD_PROJECT` | both | GCP project ID |
+| `FIRESTORE_PROJECT_ID` | frontend | Firestore project (usually same) |
+| `BACKEND_API_URL` | frontend | Backend base URL (`http://localhost:8080` locally) |
+| `GOOGLE_CLOUD_LOCATION` | backend | Vertex region (`europe-west1`) |
+| `GOOGLE_GENAI_USE_VERTEXAI` | backend | Must be `True` — no API keys |

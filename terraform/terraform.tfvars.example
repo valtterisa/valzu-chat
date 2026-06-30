@@ -1,0 +1,6 @@
+project_id      = "valzu-chat-prod"
+region          = "europe-west1"
+backend_image   = "europe-west1-docker.pkg.dev/valzu-chat-prod/valzu-chat/backend:latest"
+frontend_image  = "europe-west1-docker.pkg.dev/valzu-chat-prod/valzu-chat/frontend:latest"
+backend_min_instances    = 0
+frontend_min_instances = 0

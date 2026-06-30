@@ -1,6 +1,6 @@
 "use client";
 
-import type { FileUIPart, SourceDocumentUIPart } from "ai";
+import type { FileUIPart, SourceDocumentUIPart } from "@/lib/ai-types";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";

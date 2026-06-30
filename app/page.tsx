@@ -1,17 +1,30 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { createChat } from "@/lib/chat-repo";
+"use client";
 
-export default async function Home() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { getAnonymousUserId } from "@/lib/anonymous-user";
 
-  if (!session) {
-    redirect("/signin");
-  }
+export default function Home() {
+  const router = useRouter();
 
-  const chatId = await createChat();
-  redirect(`/c/${chatId}`);
+  useEffect(() => {
+    const userId = getAnonymousUserId();
+    void fetch("/api/threads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    })
+      .then((res) => res.json())
+      .then((data: { threadId?: string }) => {
+        if (data.threadId) {
+          router.replace(`/c/${data.threadId}`);
+        }
+      });
+  }, [router]);
+
+  return (
+    <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
+      Starting new chat…
+    </div>
+  );
 }

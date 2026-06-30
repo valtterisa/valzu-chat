@@ -1,6 +1,10 @@
 "use client";
 
-import type { ChatStatus, FileUIPart, SourceDocumentUIPart } from "ai";
+import type {
+  ChatStatus,
+  FileUIPart,
+  SourceDocumentUIPart,
+} from "@/lib/ai-types";
 import type {
   ChangeEvent,
   ChangeEventHandler,
